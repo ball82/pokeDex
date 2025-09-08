@@ -1,17 +1,27 @@
-const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=150&offset=0";
-const allPokemon = [];
-let currentIndex = 0;
-let overlayIndex = 0;
+const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=150&offset=0"; // URL der API (liefert die ersten 150 Pokémon)
+const allPokemon = [];                                               // Array für alle Pokémon-Daten
+let currentIndex = 0;                                                // Index für die aktuell gerenderten Karten
+let overlayIndex = 0;                                                // Index für das aktuell angezeigte Pokémon im Overlay
 
+// =====================================================
+// initPokedex()
+// Hauptstartfunktion der App.
+// - Lädt die Grunddaten und Details aller Pokémon
+// - Rendert die ersten 20 Karten
+// - Aktiviert den "Load More"-Button
+// =====================================================
 async function initPokedex() {
   await fetchAllPokemon();
   await fetchPokemonDetails();
   renderNextBatch();
-  document
-    .getElementById("load-more")
-    .addEventListener("click", renderNextBatch);
+  document.getElementById("load-more").addEventListener("click", renderNextBatch);
 }
 
+// =====================================================
+// fetchAllPokemon()
+// Holt die erste Liste mit 150 Pokémon (nur Name + URL)
+// von der PokeAPI und speichert sie im Array allPokemon.
+// =====================================================
 async function fetchAllPokemon() {
   showLoading(true);
   const response = await fetch(apiUrl);
@@ -19,17 +29,26 @@ async function fetchAllPokemon() {
   allPokemon.push(...data.results);
 }
 
+// =====================================================
+// fetchPokemonDetails()
+// Lädt zu jedem Pokémon in allPokemon die vollständigen
+// Detaildaten (z. B. Typen, Stats, Bilder).
+// Überschreibt das ursprüngliche Array mit diesen Daten.
+// =====================================================
 async function fetchPokemonDetails() {
-  const promises = allPokemon.map((p) =>
-    fetch(p.url).then((res) => res.json())
-  );
+  const promises = allPokemon.map((p) => fetch(p.url).then((res) => res.json()));
   const results = await Promise.all(promises);
   allPokemon.length = 0;
   allPokemon.push(...results);
   showLoading(false);
 }
 
-// --- Render ---
+// =====================================================
+// renderNextBatch()
+// Rendert jeweils 20 Pokémon-Karten in die Liste.
+// Deaktiviert den Button während des Renderns und
+// aktiviert oder versteckt ihn anschließend wieder.
+// =====================================================
 function renderNextBatch() {
   const list = document.querySelector(".pokemon-list");
   const startIndex = currentIndex;
@@ -41,6 +60,11 @@ function renderNextBatch() {
   updateLoadBtn(loadBtn);
 }
 
+// =====================================================
+// renderBatchCards(slice, startIndex, list)
+// Rendert ein Set von Karten (z. B. 20 Stück).
+// Berechnet für jede Karte den absoluten Index.
+// =====================================================
 function renderBatchCards(slice, startIndex, list) {
   slice.forEach((pokemon, index) => {
     const absoluteIndex = startIndex + index;
@@ -49,6 +73,13 @@ function renderBatchCards(slice, startIndex, list) {
   });
 }
 
+// =====================================================
+// createPokemonCard(pokemon, absoluteIndex)
+// Erstellt eine einzelne Pokémon-Karte.
+// - Hintergrundfarbe je nach Typ
+// - Inhalt über Template
+// - Klick: öffnet Overlay mit Details
+// =====================================================
 function createPokemonCard(pokemon, absoluteIndex) {
   const card = document.createElement("div");
   card.className = "pokemon-card";
@@ -58,6 +89,11 @@ function createPokemonCard(pokemon, absoluteIndex) {
   return card;
 }
 
+// =====================================================
+// updateLoadBtn(loadBtn)
+// Steuert, ob der "Load More"-Button noch angezeigt
+// oder deaktiviert wird, wenn alle Karten gerendert sind.
+// =====================================================
 function updateLoadBtn(loadBtn) {
   if (currentIndex >= allPokemon.length) {
     loadBtn.style.display = "none";
@@ -66,6 +102,11 @@ function updateLoadBtn(loadBtn) {
   }
 }
 
+// =====================================================
+// pokemonCardTemplate(pokemon)
+// Gibt das HTML-Template für eine einfache Pokémon-Karte
+// zurück (Name, Bild, Typ).
+// =====================================================
 function pokemonCardTemplate(pokemon) {
   return `
     <h4>${pokemon.name}</h4>
@@ -76,6 +117,13 @@ function pokemonCardTemplate(pokemon) {
   `;
 }
 
+// =====================================================
+// openOverlay(index)
+// Öffnet ein Overlay mit den Detailinfos eines Pokémon.
+// - Setzt das aktuelle Pokémon
+// - Zeigt die Detailkarte an
+// - Verhindert Scrollen im Hintergrund
+// =====================================================
 function openOverlay(index) {
   overlayIndex = index;
   const p = allPokemon[index];
@@ -86,6 +134,11 @@ function openOverlay(index) {
   document.body.style.overflow = "hidden";
 }
 
+// =====================================================
+// overlayCardTemplate(pokemon)
+// Gibt HTML-Template für das Overlay zurück
+// (Name, Bild, Typ, Attack, Defense).
+// =====================================================
 function overlayCardTemplate(pokemon) {
   return `
     <h2>${pokemon.name}</h2>
@@ -98,6 +151,11 @@ function overlayCardTemplate(pokemon) {
   `;
 }
 
+// =====================================================
+// closeOverlay(event)
+// Schließt das Overlay, wenn man auf den Hintergrund
+// klickt, und aktiviert wieder Scrollen im Body.
+// =====================================================
 function closeOverlay(event) {
   if (event.target.id === "overlay") {
     document.getElementById("overlay").classList.add("d-none");
@@ -105,16 +163,32 @@ function closeOverlay(event) {
   }
 }
 
+// =====================================================
+// prevPokemon(event)
+// Blättert im Overlay ein Pokémon zurück.
+// =====================================================
 function prevPokemon(event) {
   event.stopPropagation();
   if (overlayIndex > 0) openOverlay(overlayIndex - 1);
 }
 
+// =====================================================
+// nextPokemon(event)
+// Blättert im Overlay ein Pokémon weiter.
+// =====================================================
 function nextPokemon(event) {
   event.stopPropagation();
   if (overlayIndex < allPokemon.length - 1) openOverlay(overlayIndex + 1);
 }
 
+// =====================================================
+// searchPokemon(event)
+// Führt eine Suche nach Pokémon-Namen aus.
+// - Nur bei >= 3 Zeichen
+// - Rendert die gefilterten Ergebnisse
+// - Versteckt den Load-Button
+// - Zeigt einen Reset-Button
+// =====================================================
 function searchPokemon(event) {
   event.preventDefault();
   const query = getSearchQuery();
@@ -127,10 +201,19 @@ function searchPokemon(event) {
   showOrCreateResetBtn();
 }
 
+// =====================================================
+// getSearchQuery()
+// Holt den Text aus dem Suchfeld, entfernt Leerzeichen
+// und macht alles klein.
+// =====================================================
 function getSearchQuery() {
   return document.getElementById("searchInput").value.trim().toLowerCase();
 }
 
+// =====================================================
+// renderFilteredCards(filtered, list)
+// Rendert nur die gefilterten Karten nach der Suche.
+// =====================================================
 function renderFilteredCards(filtered, list) {
   filtered.forEach((p) => {
     const card = createPokemonCard(p, allPokemon.indexOf(p));
@@ -138,10 +221,19 @@ function renderFilteredCards(filtered, list) {
   });
 }
 
+// =====================================================
+// hideLoadMoreBtn()
+// Blendet den "Load More"-Button komplett aus.
+// =====================================================
 function hideLoadMoreBtn() {
   document.getElementById("load-more").style.display = "none";
 }
 
+// =====================================================
+// showOrCreateResetBtn()
+// Erstellt einen "Reset"-Button, falls er noch nicht
+// existiert, und zeigt ihn an.
+// =====================================================
 function showOrCreateResetBtn() {
   let resetBtn = document.getElementById("reset-btn");
   if (!resetBtn) {
@@ -151,6 +243,11 @@ function showOrCreateResetBtn() {
   resetBtn.style.display = "inline-block";
 }
 
+// =====================================================
+// createResetBtn()
+// Erstellt den Button "Back to full list", mit dem die
+// Pokedex-Ansicht zurückgesetzt wird.
+// =====================================================
 function createResetBtn() {
   const btn = document.createElement("button");
   btn.id = "reset-btn";
@@ -160,6 +257,14 @@ function createResetBtn() {
   return btn;
 }
 
+// =====================================================
+// resetPokedex()
+// Setzt die Ansicht zurück auf die volle Liste.
+// - Leert die Liste
+// - Startet das Rendering neu
+// - Zeigt den Load-Button wieder
+// - Versteckt den Reset-Button
+// =====================================================
 function resetPokedex() {
   const list = document.querySelector(".pokemon-list");
   list.innerHTML = "";
@@ -169,6 +274,11 @@ function resetPokedex() {
   document.getElementById("reset-btn").style.display = "none";
 }
 
+// =====================================================
+// getPokemonTypeColor(type)
+// Gibt eine Hintergrundfarbe je nach Typ des Pokémon
+// zurück (z. B. Feuer = Orange).
+// =====================================================
 function getPokemonTypeColor(type) {
   const colors = {
     fire: "#F08030",
@@ -184,6 +294,10 @@ function getPokemonTypeColor(type) {
   return colors[type] || "#A8A878";
 }
 
+// =====================================================
+// showLoading(show)
+// Steuert die Ladeanzeige (ein- oder ausblenden).
+// =====================================================
 function showLoading(show) {
   document.getElementById("loading").classList.toggle("d-none", !show);
 }
