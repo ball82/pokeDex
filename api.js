@@ -1,7 +1,8 @@
 const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=150&offset=0"; // URL der API (liefert die ersten 150 Pokémon)
 const allPokemon = [];                                               // Array für alle Pokémon-Daten
 let currentIndex = 0;                                                // Index für die aktuell gerenderten Karten
-let overlayIndex = 0;                                                // Index für das aktuell angezeigte Pokémon im Overlay
+let overlayIndex = 0;    
+  const promises = [];                                            // Index für das aktuell angezeigte Pokémon im Overlay
 
 // =====================================================
 // initPokedex()
@@ -110,6 +111,7 @@ function updateLoadBtn(loadBtn) {
 function pokemonCardTemplate(pokemon) {
   return `
     <h4>${pokemon.name}</h4>
+    <p><b>ID:${pokemon.id}</b> </p>
     <img class="pokemon-image" src="${
       pokemon.sprites.other["official-artwork"].front_default
     }" alt="${pokemon.name}">
@@ -132,6 +134,22 @@ function openOverlay(index) {
   card.innerHTML = overlayCardTemplate(p);
   overlay.classList.remove("d-none");
   document.body.style.overflow = "hidden";
+  updateOverlayNavButtons();
+}
+
+// =====================================================
+// updateOverlayNavButtons()
+// Steuert die Overlay-Navigation (Pfeile).
+// - Liest Prev/Next Buttons aus dem DOM
+// - Deaktiviert sie am Anfang/Ende der Liste
+// - Bricht ab, falls die Buttons nicht existieren
+// =====================================================
+function updateOverlayNavButtons() {
+  const prevBtn = document.getElementById("prev-btn");
+  const nextBtn = document.getElementById("next-btn");
+  if (!prevBtn || !nextBtn) return;
+  prevBtn.disabled = overlayIndex <= 0;
+  nextBtn.disabled = overlayIndex >= allPokemon.length - 1;
 }
 
 // =====================================================
@@ -142,6 +160,7 @@ function openOverlay(index) {
 function overlayCardTemplate(pokemon) {
   return `
     <h2>${pokemon.name}</h2>
+    <p><b>ID:${pokemon.id}</b> </p>
     <img src="${
       pokemon.sprites.other["official-artwork"].front_default
     }" class="overlay-image" alt="${pokemon.name}">
@@ -160,6 +179,10 @@ function closeOverlay(event) {
   if (event.target.id === "overlay") {
     document.getElementById("overlay").classList.add("d-none");
     document.body.style.overflow = "auto";
+    const prevBtn = document.getElementById("prev-btn");
+    const nextBtn = document.getElementById("next-btn");
+    if (prevBtn) prevBtn.disabled = false;
+    if (nextBtn) nextBtn.disabled = false;
   }
 }
 
