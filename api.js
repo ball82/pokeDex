@@ -25,9 +25,16 @@ async function initPokedex() {
 // =====================================================
 async function fetchAllPokemon() {
   showLoading(true);
-  const response = await fetch(apiUrl);
-  const data = await response.json();
-  allPokemon.push(...data.results);
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    allPokemon.push(...data.results);
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Pokémon-Liste:", error);
+    alert("Es gab ein Problem beim Laden der Pokémon. Bitte versuchen Sie es später erneut.");
+  } finally {
+    showLoading(false);
+  }
 }
 
 // =====================================================
@@ -36,12 +43,51 @@ async function fetchAllPokemon() {
 // Detaildaten (z. B. Typen, Stats, Bilder).
 // Überschreibt das ursprüngliche Array mit diesen Daten.
 // =====================================================
-async function fetchPokemonDetails() {
-  const promises = allPokemon.map((p) => fetch(p.url).then((res) => res.json()));
-  const results = await Promise.all(promises);
-  allPokemon.length = 0;
-  allPokemon.push(...results);
-  showLoading(false);
+async function fetchPokemonDetails(start = 0, count = allPokemon.length, hideLoading = true) {
+  const end = Math.min(start + count, allPokemon.length);
+  const promises = buildFetchPromises(start, end);
+  try {
+    const results = await Promise.all(promises);
+    updatePokemonData(results, start);
+  } catch (error) {
+    handleFetchError(error, "Pokémon-Details");
+  } finally {
+    if (hideLoading) showLoading(false);
+  }
+}
+
+// =====================================================
+// buildFetchPromises(start, end)
+// Erstellt ein Array von Promises für das Abrufen der
+// Pokémon-Details im angegebenen Bereich.
+// =====================================================
+function buildFetchPromises(start, end) {
+  const promises = [];
+  for (let i = start; i < end; i++) {
+    promises.push(fetch(allPokemon[i].url).then((res) => res.json()));
+  }
+  return promises;
+}
+
+// =====================================================
+// updatePokemonData(results, start)
+// Aktualisiert die Pokémon-Daten im Array allPokemon
+// mit den abgerufenen Details ab dem Startindex.
+// =====================================================
+function updatePokemonData(results, start) {
+  for (let i = 0; i < results.length; i++) {
+    allPokemon[start + i] = results[i];
+  }
+}
+
+// =====================================================
+// handleFetchError(error, context)
+// Behandelt Fehler beim Abrufen von Daten und zeigt
+// eine entsprechende Fehlermeldung an.
+// =====================================================
+function handleFetchError(error, context) {
+  console.error(`Fehler beim Abrufen der ${context}:`, error);
+  alert(`Es gab ein Problem beim Laden der ${context}. Bitte versuchen Sie es später erneut.`);
 }
 
 // =====================================================
@@ -167,6 +213,8 @@ function overlayCardTemplate(pokemon) {
     <p><b>Type:</b> ${pokemon.types.map((t) => t.type.name).join(", ")}</p>
     <p><b>Attack:</b> ${pokemon.stats[1].base_stat}</p>
     <p><b>Defense:</b> ${pokemon.stats[2].base_stat}</p>
+    <p><b>Height:</b> ${pokemon.height / 10} m</p>
+    <p><b>Weight:</b> ${pokemon.weight / 10} kg</p>
   `;
 }
 
@@ -291,8 +339,8 @@ function createResetBtn() {
 function resetPokedex() {
   const list = document.querySelector(".pokemon-list");
   list.innerHTML = "";
-  currentIndex = 0;
   document.getElementById("searchInput").value = "";
+  currentIndex = 0;
   renderNextBatch();
   document.getElementById("load-more").style.display = "inline-block";
   document.getElementById("reset-btn").style.display = "none";
