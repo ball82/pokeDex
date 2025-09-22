@@ -292,6 +292,7 @@ function resetPokedex() {
   const list = document.querySelector(".pokemon-list");
   list.innerHTML = "";
   currentIndex = 0;
+  document.getElementById("searchInput").value = "";
   renderNextBatch();
   document.getElementById("load-more").style.display = "inline-block";
   document.getElementById("reset-btn").style.display = "none";
