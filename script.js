@@ -133,13 +133,12 @@ function renderNextBatch() {
 // Berechnet für jede Karte den absoluten Index.
 // =====================================================
 function renderBatchCards(slice, startIndex, list) {
-  slice.forEach((pokemon, index) => {
-    const absoluteIndex = startIndex + index;
-    const card = createPokemonCard(pokemon, absoluteIndex);
+  for (let indexSlice = 0; indexSlice < slice.length; indexSlice++) {
+    const absoluteIndex = startIndex + indexSlice;
+    const card = createPokemonCard(slice[indexSlice], absoluteIndex);
     list.appendChild(card);
-  });
+  }
 }
-
 // =====================================================
 // createPokemonCard(pokemon, absoluteIndex)
 // Erstellt eine einzelne Pokémon-Karte.
@@ -274,10 +273,11 @@ function getSearchQuery() {
 // Rendert nur die gefilterten Karten nach der Suche.
 // =====================================================
 function renderFilteredCards(filtered, list) {
-  filtered.forEach((p) => {
+  for (let i = 0; i < filtered.length; i++) {
+    const p = filtered[i];
     const card = createPokemonCard(p, allPokemon.indexOf(p));
     list.appendChild(card);
-  });
+  }
 }
 
 // =====================================================
