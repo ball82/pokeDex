@@ -94,6 +94,17 @@ main.container {
   max-width: 400px;
   text-align: center;
 }
+/* Fehlermeldung bei der Suche */
+.search-error {
+  color: #d32f2f;
+  background: #fff3f3;
+  border: 1px solid #d32f2f;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 2rem auto;
+  font-size: 1.2rem;
+  max-width: 400px;
+}
 .overlay-image {
   height: 20rem;
 }

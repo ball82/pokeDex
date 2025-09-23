@@ -13,11 +13,27 @@ const promises = []; // Index für das aktuell angezeigte Pokémon im Overlay
 // =====================================================
 async function initPokedex() {
   await fetchAllPokemon();
-  // lade die ersten 20 Details und zeige die Seite
-  showLoading(true);
-  await fetchPokemonDetails(0, 20);
+  await fetchPokemonDetails(0, 20); // zuerst nur 20 Details laden
   renderNextBatch();
-  document.getElementById("load-more").addEventListener("click", renderNextBatch);
+  document.getElementById("load-more").addEventListener("click", loadMoreHandler);
+}
+
+// Lädt Details für einen Bereich nach, falls noch nicht vorhanden
+async function ensureDetailsForRange(start, count) {
+  const end = Math.min(start + count, allPokemon.length);
+  for (let i = start; i < end; i++) {
+    if (!allPokemon[i] || !allPokemon[i].sprites) {
+      await fetchPokemonDetails(start, count, false);
+      return;
+    }
+  }
+}
+
+// Handler für den Load-More-Button: sicherstellen, dass Details vorhanden sind, dann rendern
+async function loadMoreHandler() {
+  const nextStart = currentIndex;
+  await ensureDetailsForRange(nextStart, 20);
+  renderNextBatch();
 }
 
 // =====================================================
@@ -102,45 +118,15 @@ function handleFetchError(error, context) {
 // Deaktiviert den Button während des Renderns und
 // aktiviert oder versteckt ihn anschließend wieder.
 // =====================================================
-async function renderNextBatch() {
+function renderNextBatch() {
   const list = document.querySelector(".pokemon-list");
   const startIndex = currentIndex;
-  const endIndex = startIndex + 20;
+  const slice = allPokemon.slice(startIndex, startIndex + 20);
   const loadBtn = document.getElementById("load-more");
   loadBtn.disabled = true;
-  await ensureDetailsForRange(startIndex, endIndex);
-  const slice = allPokemon.slice(startIndex, startIndex + 20);
   renderBatchCards(slice, startIndex, list);
   currentIndex += 20;
   updateLoadBtn(loadBtn);
-}
-
-// =====================================================
-// isDetailed(pokemon)
-// Prüft, ob ein Eintrag bereits vollständige Details enthält.
-// =====================================================
-function isDetailed(pokemon) {
-  return pokemon && pokemon.sprites && pokemon.stats;
-}
-
-// =====================================================
-// ensureDetailsForRange(start, end)
-// Stellt sicher, dass alle Pokémon im Bereich detailliert
-// vorliegen; lädt fehlende Details bei Bedarf.
-// =====================================================
-async function ensureDetailsForRange(start, end) {
-  const toLoad = [];
-  for (let i = start; i < Math.min(end, allPokemon.length); i++) {
-    if (!isDetailed(allPokemon[i])) toLoad.push(i);
-  }
-  if (toLoad.length === 0) return;
-  const promises = toLoad.map((i) => fetch(allPokemon[i].url).then((r) => r.json()));
-  try {
-    const results = await Promise.all(promises);
-    results.forEach((res, idx) => (allPokemon[toLoad[idx]] = res));
-  } catch (error) {
-    handleFetchError(error, "Pokémon-Details (on demand)");
-  }
 }
 
 // =====================================================
@@ -186,22 +172,6 @@ function updateLoadBtn(loadBtn) {
 }
 
 // =====================================================
-// pokemonCardTemplate(pokemon)
-// Gibt das HTML-Template für eine einfache Pokémon-Karte
-// zurück (Name, Bild, Typ).
-// =====================================================
-function pokemonCardTemplate(pokemon) {
-  return `
-    <h4>${pokemon.name}</h4>
-    <p><b>ID:${pokemon.id}</b> </p>
-    <img class="pokemon-image" src="${
-      pokemon.sprites.other["official-artwork"].front_default
-    }" alt="${pokemon.name}">
-    <p>Type: ${pokemon.types.map((t) => t.type.name).join(", ")}</p>
-  `;
-}
-
-// =====================================================
 // openOverlay(index)
 // Öffnet ein Overlay mit den Detailinfos eines Pokémon.
 // - Setzt das aktuelle Pokémon
@@ -232,26 +202,6 @@ function updateOverlayNavButtons() {
   if (!prevBtn || !nextBtn) return;
   prevBtn.disabled = overlayIndex <= 0;
   nextBtn.disabled = overlayIndex >= allPokemon.length - 1;
-}
-
-// =====================================================
-// overlayCardTemplate(pokemon)
-// Gibt HTML-Template für das Overlay zurück
-// (Name, Bild, Typ, Attack, Defense).
-// =====================================================
-function overlayCardTemplate(pokemon) {
-  return `
-    <h2>${pokemon.name}</h2>
-    <p><b>ID:${pokemon.id}</b> </p>
-    <img src="${
-      pokemon.sprites.other["official-artwork"].front_default
-    }" class="overlay-image" alt="${pokemon.name}">
-    <p><b>Type:</b> ${pokemon.types.map((t) => t.type.name).join(", ")}</p>
-    <p><b>Attack:</b> ${pokemon.stats[1].base_stat}</p>
-    <p><b>Defense:</b> ${pokemon.stats[2].base_stat}</p>
-    <p><b>Height:</b> ${pokemon.height / 10} m</p>
-    <p><b>Weight:</b> ${pokemon.weight / 10} kg</p>
-  `;
 }
 
 // =====================================================
@@ -384,26 +334,6 @@ function resetPokedex() {
   renderNextBatch();
   document.getElementById("load-more").style.display = "inline-block";
   document.getElementById("reset-btn").style.display = "none";
-}
-
-// =====================================================
-// getPokemonTypeColor(type)
-// Gibt eine Hintergrundfarbe je nach Typ des Pokémon
-// zurück (z. B. Feuer = Orange).
-// =====================================================
-function getPokemonTypeColor(type) {
-  const colors = {
-    fire: "#F08030",
-    water: "#6890F0",
-    grass: "#78C850",
-    electric: "#F8D030",
-    psychic: "#F85888",
-    ice: "#98D8D8",
-    dragon: "#7038F8",
-    dark: "#705848",
-    normal: "#A8A878",
-  };
-  return colors[type] || "#A8A878";
 }
 
 // =====================================================
