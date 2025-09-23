@@ -1,8 +1,8 @@
 const apiUrl = "https://pokeapi.co/api/v2/pokemon?limit=150&offset=0"; // URL der API (liefert die ersten 150 Pokémon)
-const allPokemon = [];                                               // Array für alle Pokémon-Daten
-let currentIndex = 0;                                                // Index für die aktuell gerenderten Karten
-let overlayIndex = 0;    
-  const promises = [];                                            // Index für das aktuell angezeigte Pokémon im Overlay
+const allPokemon = []; // Array für alle Pokémon-Daten
+let currentIndex = 0; // Index für die aktuell gerenderten Karten
+let overlayIndex = 0;
+const promises = []; // Index für das aktuell angezeigte Pokémon im Overlay
 
 // =====================================================
 // initPokedex()
@@ -13,7 +13,9 @@ let overlayIndex = 0;
 // =====================================================
 async function initPokedex() {
   await fetchAllPokemon();
-  await fetchPokemonDetails();
+  // lade die ersten 20 Details und zeige die Seite
+  showLoading(true);
+  await fetchPokemonDetails(0, 20);
   renderNextBatch();
   document.getElementById("load-more").addEventListener("click", renderNextBatch);
 }
@@ -30,8 +32,8 @@ async function fetchAllPokemon() {
     const data = await response.json();
     allPokemon.push(...data.results);
   } catch (error) {
-    console.error("Fehler beim Abrufen der Pokémon-Liste:", error);
-    alert("Es gab ein Problem beim Laden der Pokémon. Bitte versuchen Sie es später erneut.");
+    console.error("Error fetching Pokémon list:", error);
+    alert("There was a problem loading the Pokémon. Please try again later.");
   } finally {
     showLoading(false);
   }
@@ -43,7 +45,11 @@ async function fetchAllPokemon() {
 // Detaildaten (z. B. Typen, Stats, Bilder).
 // Überschreibt das ursprüngliche Array mit diesen Daten.
 // =====================================================
-async function fetchPokemonDetails(start = 0, count = allPokemon.length, hideLoading = true) {
+async function fetchPokemonDetails(
+  start = 0,
+  count = allPokemon.length,
+  hideLoading = true
+) {
   const end = Math.min(start + count, allPokemon.length);
   const promises = buildFetchPromises(start, end);
   try {
@@ -86,8 +92,8 @@ function updatePokemonData(results, start) {
 // eine entsprechende Fehlermeldung an.
 // =====================================================
 function handleFetchError(error, context) {
-  console.error(`Fehler beim Abrufen der ${context}:`, error);
-  alert(`Es gab ein Problem beim Laden der ${context}. Bitte versuchen Sie es später erneut.`);
+  console.error(`Error fetching ${context}:`, error);
+  alert(`There was a problem loading the ${context}. Please try again later.`);
 }
 
 // =====================================================
@@ -96,15 +102,45 @@ function handleFetchError(error, context) {
 // Deaktiviert den Button während des Renderns und
 // aktiviert oder versteckt ihn anschließend wieder.
 // =====================================================
-function renderNextBatch() {
+async function renderNextBatch() {
   const list = document.querySelector(".pokemon-list");
   const startIndex = currentIndex;
-  const slice = allPokemon.slice(startIndex, startIndex + 20);
+  const endIndex = startIndex + 20;
   const loadBtn = document.getElementById("load-more");
   loadBtn.disabled = true;
+  await ensureDetailsForRange(startIndex, endIndex);
+  const slice = allPokemon.slice(startIndex, startIndex + 20);
   renderBatchCards(slice, startIndex, list);
   currentIndex += 20;
   updateLoadBtn(loadBtn);
+}
+
+// =====================================================
+// isDetailed(pokemon)
+// Prüft, ob ein Eintrag bereits vollständige Details enthält.
+// =====================================================
+function isDetailed(pokemon) {
+  return pokemon && pokemon.sprites && pokemon.stats;
+}
+
+// =====================================================
+// ensureDetailsForRange(start, end)
+// Stellt sicher, dass alle Pokémon im Bereich detailliert
+// vorliegen; lädt fehlende Details bei Bedarf.
+// =====================================================
+async function ensureDetailsForRange(start, end) {
+  const toLoad = [];
+  for (let i = start; i < Math.min(end, allPokemon.length); i++) {
+    if (!isDetailed(allPokemon[i])) toLoad.push(i);
+  }
+  if (toLoad.length === 0) return;
+  const promises = toLoad.map((i) => fetch(allPokemon[i].url).then((r) => r.json()));
+  try {
+    const results = await Promise.all(promises);
+    results.forEach((res, idx) => (allPokemon[toLoad[idx]] = res));
+  } catch (error) {
+    handleFetchError(error, "Pokémon-Details (on demand)");
+  }
 }
 
 // =====================================================
@@ -267,7 +303,11 @@ function searchPokemon(event) {
   const list = document.querySelector(".pokemon-list");
   list.innerHTML = "";
   const filtered = allPokemon.filter((p) => p.name.includes(query));
-  renderFilteredCards(filtered, list);
+  if (filtered.length === 0) {
+    showSearchError(list);
+  } else {
+    renderFilteredCards(filtered, list);
+  }
   hideLoadMoreBtn();
   showOrCreateResetBtn();
 }
@@ -372,4 +412,15 @@ function getPokemonTypeColor(type) {
 // =====================================================
 function showLoading(show) {
   document.getElementById("loading").classList.toggle("d-none", !show);
+}
+
+// =====================================================
+// showSearchError(list)
+// Zeigt eine Fehlermeldung an, wenn kein Pokémon beim Suchen gefunden wird.
+// =====================================================
+function showSearchError(list) {
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "search-error";
+  errorDiv.textContent = "No Pokémon found. Please check your input..";
+  list.appendChild(errorDiv);
 }
