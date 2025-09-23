@@ -7,7 +7,6 @@ body {
 .navbar {
   padding: 1rem;
   background-color: aqua;
-  width: 100vw;
   justify-content: center;
   flex-direction: column;
 }
@@ -94,7 +93,7 @@ main.container {
   max-width: 400px;
   text-align: center;
 }
-/* Fehlermeldung bei der Suche */
+
 .search-error {
   color: #d32f2f;
   background: #fff3f3;
@@ -128,6 +127,7 @@ main.container {
 #next-btn {
   right: 10%;
 }
+
 
 @media (max-width: 520px) {
   .overlay-card {

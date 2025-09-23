@@ -13,12 +13,11 @@ const promises = []; // Index für das aktuell angezeigte Pokémon im Overlay
 // =====================================================
 async function initPokedex() {
   await fetchAllPokemon();
-  await fetchPokemonDetails(0, 20); // zuerst nur 20 Details laden
+  await fetchPokemonDetails(0, 20); 
   renderNextBatch();
   document.getElementById("load-more").addEventListener("click", loadMoreHandler);
 }
 
-// Lädt Details für einen Bereich nach, falls noch nicht vorhanden
 async function ensureDetailsForRange(start, count) {
   const end = Math.min(start + count, allPokemon.length);
   for (let i = start; i < end; i++) {
@@ -29,7 +28,6 @@ async function ensureDetailsForRange(start, count) {
   }
 }
 
-// Handler für den Load-More-Button: sicherstellen, dass Details vorhanden sind, dann rendern
 async function loadMoreHandler() {
   const nextStart = currentIndex;
   await ensureDetailsForRange(nextStart, 20);
