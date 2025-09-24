@@ -123,12 +123,19 @@ main.container {
   cursor: not-allowed;
 }
 #prev-btn {
-  left: 10%;
+  left: 25%;
 }
 #next-btn {
-  right: 10%;
+  right: 25%;
 }
-
+@media (max-width: 992px) {
+  #prev-btn {
+    left: 10%;
+  }
+  #next-btn {
+    right: 10%;
+  }
+}
 
 @media (max-width: 520px) {
   .overlay-card {
@@ -144,6 +151,7 @@ main.container {
     right: 5%;
   }
 }
+
 @media (max-width: 348px) {
   .nav-btn {
     color: rgb(0, 0, 0);

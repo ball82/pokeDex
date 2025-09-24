@@ -1,8 +1,3 @@
-// =====================================================
-// pokemonCardTemplate(pokemon)
-// Gibt das HTML-Template für eine einfache Pokémon-Karte
-// zurück (Name, Bild, Typ).
-// =====================================================
 function pokemonCardTemplate(pokemon) {
   return `
     <h4>${pokemon.name}</h4>
@@ -14,11 +9,6 @@ function pokemonCardTemplate(pokemon) {
   `;
 }
 
-// =====================================================
-// overlayCardTemplate(pokemon)
-// Gibt HTML-Template für das Overlay zurück
-// (Name, Bild, Typ, Attack, Defense).
-// =====================================================
 function overlayCardTemplate(pokemon) {
   return `
     <h2>${pokemon.name}</h2>
@@ -34,22 +24,4 @@ function overlayCardTemplate(pokemon) {
   `;
 }
 
-// =====================================================
-// getPokemonTypeColor(type)
-// Gibt eine Hintergrundfarbe je nach Typ des Pokémon
-// zurück (z. B. Feuer = Orange).
-// =====================================================
-function getPokemonTypeColor(type) {
-  const colors = {
-    fire: "#F08030",
-    water: "#6890F0",
-    grass: "#78C850",
-    electric: "#F8D030",
-    psychic: "#F85888",
-    ice: "#98D8D8",
-    dragon: "#7038F8",
-    dark: "#705848",
-    normal: "#A8A878",
-  };
-  return colors[type] || "#A8A878";
-}
+
